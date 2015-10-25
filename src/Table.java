@@ -1,6 +1,6 @@
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Scanner;
 
 /**
@@ -8,7 +8,7 @@ import java.util.Scanner;
  */
 public class Table {
     private String input;
-    private ArrayList<Association<String, FrequencyList>> table;
+    private HashMap<String, FrequencyList> table;
     public static final int DEFAULT_SEED_SIZE = 2;
     public static final int MAX_OUTPUT_LENGTH = 200;
     public final int seedSize; //important to keep final for when the table is created.
@@ -28,22 +28,21 @@ public class Table {
 
     public Table(String str, int seedSize) {
         input = str;
-        table = new ArrayList<>();
+        table = new HashMap<>();
         this.seedSize = seedSize;
         parseString(); //parse through input
-
     }
 
-    public String generateText(String seed, int length) {
-        if (seed.length() != seedSize) throw new IllegalArgumentException("The starting seed length does not match the seed size (" + seedSize + ")declared upon table initialization.");
+    public String generateText(String seed, int max) {
         StringBuilder result = new StringBuilder(seed);
         int idx = 0;
-        int end = length;
         char c; //next character.
-        while (idx < end) {
-            int associationIndex = indexOf(result.toString().substring(idx));
-            if (associationIndex == -1) break; //Can't find a character set to work from. End the string.
-            c = table.get(associationIndex).getValue().getNextChar();
+        while (idx < max) {
+//            System.out.println(result.substring(idx));
+            FrequencyList f = table.get(result.toString().substring(idx));
+//            System.out.println(f);
+            if (f == null) break; //Can't find a character set to work from. End the string.
+            c = f.getNextChar();
             result.append(c);
             idx++;
         }
@@ -77,41 +76,29 @@ public class Table {
 
 
         } while (idx + seedSize < input.length()); //if the substring is shorter the while loop will quit.
-        System.out.println("done");
+
 
     }
 
     private void add(String chars, char followingChar) {
-        int idx = indexOf(chars);
-        if (idx != -1) update(idx, followingChar); //Already exists, update the counts.
+        //want to add a new <String, FrequencyList> entry to hashmap
+        if (table.containsKey(chars)) update(chars, followingChar); //Already exists, update the counts.
         else { //Doesn't exist, create it.
             FrequencyList freqList = new FrequencyList();
             freqList.add(followingChar);
-            Association<String, FrequencyList> tableEntry = new Association<>(chars, freqList);
-            table.add(tableEntry);
-
+            table.put(chars, freqList);
         }
     }
 
-
-    private int indexOf(String chars) {
-        int result = -1;
-        for (int i = 0; i < table.size(); i++) {
-            String test = table.get(i).getKey();
-            if (test.equals(chars)) result = i;
-        }
-        return result;
-    }
-
-    private void update(int idx, char nextChar) {
-        Association<String, FrequencyList> tableEntry = table.get(idx);
-        tableEntry.getValue().add(nextChar);
+    private void update(String chars, char nextChar) {
+        FrequencyList freqList = table.get(chars);
+        freqList.add(nextChar); //will increment the count.
     }
 
     public String toString() {
         StringBuilder result = new StringBuilder();
-        for (Association<String, FrequencyList> item : table) {
-            result.append(item.getKey().toString() + ":\n" + item.getValue().toString() + "\n");
+        for (String str : table.keySet()) {
+            result.append(str + ":\n" + table.get(str).toString() + "\n");
         }
         return result.toString();
     }
