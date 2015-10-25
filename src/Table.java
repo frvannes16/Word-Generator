@@ -81,7 +81,6 @@ public class Table {
     }
 
     private void add(String chars, char followingChar) {
-        //want to add a new <String, FrequencyList> entry to hashmap
         if (table.containsKey(chars)) update(chars, followingChar); //Already exists, update the counts.
         else { //Doesn't exist, create it.
             FrequencyList freqList = new FrequencyList();
